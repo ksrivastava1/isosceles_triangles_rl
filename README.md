@@ -1,0 +1,1 @@
+# isosceles_triangles_rl
