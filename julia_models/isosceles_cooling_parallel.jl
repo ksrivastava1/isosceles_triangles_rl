@@ -11,8 +11,9 @@ using StatsBase
 using Plots
 using Base.Threads
 
+type = "euclidean" # "euclidean" or "torus" depending embedding
 
-for N in 3:20
+for N in 32:32
 
     STEP_SIZE::Float64 = 0.11
 
@@ -24,7 +25,12 @@ for N in 3:20
     end
 
     function dist(a,b)::Int64
-        return (a[1]-b[1])^2 + (a[2]-b[2])^2
+        if type == "torus"
+            return torus_dist(a,b)
+        end
+        if type == "euclidean"
+            return (a[1]-b[1])^2 + (a[2]-b[2])^2
+        end
     end
 
 
@@ -33,7 +39,7 @@ for N in 3:20
         distances = Dict{Int64,Vector{Tuple{Int64,Int64}}}()
         for j1 in -N:N
             for j2 in -N:N
-                d = torus_dist((0,0),(j1,j2))
+                d = dist((0,0),(j1,j2))
                 if haskey(distances,d)
                     push!(distances[d],(j1,j2))
                 else
