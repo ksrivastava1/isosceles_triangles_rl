@@ -1,3 +1,9 @@
+# CODE HERE PROVIDED BY ADAM Z. WAGNER
+# You can find more information by their work in the following link:
+# https://users.wpi.edu/~zadam/index.html, https://github.com/zawagner22?tab=repositories
+# Read about his work in applying Reinforcement learning to Mathematics for more details and cool information!
+
+
 using Random
 using LinearAlgebra
 using Statistics
