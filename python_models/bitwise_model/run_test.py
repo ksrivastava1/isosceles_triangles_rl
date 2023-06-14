@@ -1,4 +1,4 @@
-from isosceles_test import *
+from model import *
 
 def main():
 
