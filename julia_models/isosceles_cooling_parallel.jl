@@ -11,7 +11,7 @@ using StatsBase
 using Plots
 using Base.Threads
 
-type = "euclidean" # "euclidean" or "torus" depending embedding
+type = "euclidean" # "euclidean" or "torus" depending on the embedding
 
 for N in 32:32
 
