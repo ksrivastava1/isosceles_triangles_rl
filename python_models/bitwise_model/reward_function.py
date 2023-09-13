@@ -4,7 +4,7 @@ from numba import prange
 
 Lambda = 0.5 # Weight for regularizing the reward function to generate more ones (too high a labda will result in higher odds of generating isosceles triangles)
 board_construction = 'spiral' # 'rowwise' or 'spiral'
-board_type = 'euclidean' # 'euclidean' or 'torus'
+board_type = 'torus' # 'euclidean' or 'torus'
 
 # Helper function for some computations (Can use math.comb() instead if you are using python 3.8 or higher)
 
@@ -153,6 +153,9 @@ def count_elements(row):
     # Return the resulting dictionary
     return d
 
+# Fast counting function for counting the number of isosceles triangles
+# Although this requires higher space complexity
+
 @njit
 def count_isosceles_triangles(board, distance_matrix, p):
 
@@ -238,7 +241,6 @@ def count_isosceles_triangles_manual(board, p):
                     
                     # Check if any two distances are equal (up to a tolerance)
                     if dist_ij == dist_ik or dist_ij == dist_jk or dist_ik == dist_jk:
-                        print(i,j,k, dist_ij, dist_ik, dist_jk)
                         count += 1
 
     return count

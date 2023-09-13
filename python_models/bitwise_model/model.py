@@ -11,11 +11,12 @@ from reward_function import *
 
 n_actions = 2 # number of actions that the agent can take. In this case, it is either 0 for excluding a point and 1 for including it
 n_sessions = 2000 # number of new sessions per iteration
-Learning_rate = 0.01 # learning rate, increase this to converge faster
+Learning_rate = 0.001 # learning rate, increase this to converge faster
 percentile = 90 # top 100-x percentile the agent will learn from
 super_percentile = 90 # top 100-x percentile of that survives to the next generation
-Lambda = 0.8 # Weight for regularizing the reward function to generate more ones (too high a labda will result in higher odds of generating isosceles triangles)
+Lambda = 0.5 # Weight for regularizing the reward function to generate more ones (too high a labda will result in higher odds of generating isosceles triangles)
 
+# Helper function used to store data in a pickle file later
 def convert_to_word(board, n):
     word = torch.zeros(n**2)
     for i in range(n):
@@ -23,8 +24,9 @@ def convert_to_word(board, n):
             word[i*n + j] = board[i, j]
     return word
 
+########### REINFORCEMENT LEARNING FUNCTIONS #############
 
-# Define a function to generate a new session
+# Defining a function to generate a new session
 
 def generate_session(agent, n_sessions, n, dist_matrix, len_word, len_game, observation_space, verbose = 1, slow = True):
 
@@ -86,9 +88,7 @@ def generate_session(agent, n_sessions, n, dist_matrix, len_word, len_game, obse
 	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.	
     if verbose == 1:
         print("Predict: "+str(pred_time)+", play: " + str(play_time) +", scorecalc: " + str(scorecalc_time) +", recordsess: " + str(recordsess_time))
-    return states, actions, total_score
-
-# Define a function 
+    return states, actions, total_score 
 
 def select_elites(states_batch, actions_batch, rewards_batch, percentile=50):
 
@@ -101,11 +101,11 @@ def select_elites(states_batch, actions_batch, rewards_batch, percentile=50):
     for i in range(len(states_batch)):
         if rewards_batch[i] >= reward_threshold - 0.000001 and counter > 0:
             for item in states_batch[i]:
-                elite_states = torch.cat((elite_states, item.unsqueeze(0))) 
+                elite_states = torch.cat((elite_states, item.unsqueeze(0)))
             for item in actions_batch[i]:
-                elite_actions = torch.cat((elite_actions, item.unsqueeze(0))) 		
+                elite_actions = torch.cat((elite_actions, item.unsqueeze(0))) 
         counter -= 1
-	
+
     return elite_states, elite_actions
 
 def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile=90):
@@ -121,12 +121,14 @@ def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile
         if rewards_batch[i] >= reward_threshold - 0.000001 and counter > 0:
             super_states = torch.cat((super_states, states_batch[i].unsqueeze(0)), dim=0)
             super_actions = torch.cat((super_actions, actions_batch[i].unsqueeze(0)), dim=0)
-            super_rewards = torch.cat((super_rewards, rewards_batch[i].unsqueeze(0)), dim=0) 			
+            super_rewards = torch.cat((super_rewards, rewards_batch[i].unsqueeze(0)), dim=0)
         counter -= 1
     
 
     return super_states, super_actions, super_rewards
 
+
+########### DEFINING MODEL AND TRAINING #############
 
 def train(board_size, write_all, write_best, filename, slow):
 
@@ -153,7 +155,7 @@ def train(board_size, write_all, write_best, filename, slow):
     #I usually used relu activation in the hidden layers but play around to see what activation function and what optimizer works best.
     #It is important that the loss is binary cross-entropy if alphabet size is 2.
 
-    # Define the neural network architecture
+    # Defining the neural network architecture
     class MyNet(nn.Module):
         def __init__(self):
             super(MyNet, self).__init__()
@@ -177,7 +179,7 @@ def train(board_size, write_all, write_best, filename, slow):
     # Create an instance of the neural network
     net = MyNet()
 
-    # Define the loss function and optimizer
+    # Defining the loss function and optimizer
     criterion = nn.BCELoss()
     optimizer = optim.SGD(net.parameters(), lr=Learning_rate)
 
@@ -209,11 +211,10 @@ def train(board_size, write_all, write_best, filename, slow):
 
         states_batch = torch.cat((states_batch, super_states), dim=0)
 
-        
-
         if i>0:
             actions_batch = torch.cat((actions_batch, super_actions), dim=0)
 
+        print(actions_batch.shape)
         rewards_batch = torch.cat((rewards_batch, super_rewards), dim=0)
 
         randomcomp_time = time.time()-tic 
@@ -247,7 +248,6 @@ def train(board_size, write_all, write_best, filename, slow):
         super_states = torch.stack([super_sessions[i][0] for i in range(len(super_sessions))])
         super_actions = torch.stack([super_sessions[i][1] for i in range(len(super_sessions))])
         super_rewards = torch.stack([super_sessions[i][2] for i in range(len(super_sessions))])
-
 
         rewards_batch.sort()
         mean_all_reward = torch.mean(rewards_batch[-100:])	

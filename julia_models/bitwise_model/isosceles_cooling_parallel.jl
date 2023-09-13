@@ -11,9 +11,9 @@ using StatsBase
 using Plots
 using Base.Threads
 
-type = "euclidean" # "euclidean" or "torus" depending on the embedding
+type = "torus" # "euclidean" or "torus" depending on the embedding
 
-for N in 32:32
+for N in 19:31
 
     STEP_SIZE::Float64 = 0.11
 
@@ -134,6 +134,7 @@ for N in 32:32
             end
         end
         f = open("ellenberg_geordie_method_"*string(N)*"_"*string(sum(adjmat))*".txt", "w")
+        #f = open("ellenberg_geordie_method_"*string(N)*".txt", "w")
         for i in 1:N
             for j in 1:N
             if adjmat[i,j] == 1
