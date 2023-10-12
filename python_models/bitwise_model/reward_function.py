@@ -185,7 +185,7 @@ def count_isosceles_triangles(board, distance_matrix, p):
                 count += temp
                 continue
             else:
-                temp = np.int(n_choose_k(temp+1, 2))
+                temp = int(n_choose_k(temp+1, 2))
                 count += temp
 
     return count
@@ -268,9 +268,9 @@ def get_score(word, dist_matrix,len_word, n, slow):
 
     # Calculate the number of isosceles triangles on the board
     if slow:
-        isosceles = count_isosceles_triangles_manual(board, np.int(p))
+        isosceles = count_isosceles_triangles_manual(board, int(p))
     else:
-        isosceles = count_isosceles_triangles(board, dist_matrix, np.int(p))
+        isosceles = count_isosceles_triangles(board, dist_matrix, int(p))
 
     return -1*(isosceles) + Lambda*(p)
 
