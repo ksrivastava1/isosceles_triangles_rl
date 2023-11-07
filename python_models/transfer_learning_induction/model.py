@@ -26,7 +26,7 @@ def generate_session(agent, n_sessions, n, dist_matrix, len_word, len_game, obse
 
     for i in range(20000):
         tic = time.time()
-        
+
 
     
     return boards
