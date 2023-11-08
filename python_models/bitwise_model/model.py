@@ -49,22 +49,22 @@ def generate_session(agent, n_sessions, n, dist_matrix, len_word, len_game, obse
     scorecalc_time = 0
     pred_time = 0
 
-    terminal = False 
+    terminal = False
 
     while not terminal:
 
-        step += 1		
+        step += 1
         tic = time.time()
         prob = agent(states[:,:,step-1])
         pred_time += time.time()-tic
 
         for i in range(n_sessions):
-            
-            if np.random.rand() < prob[i]/2:
+
+            if np.random.rand() < prob[i]:
                 action = 1
             else:
-                action = 0      
-            
+                action = 0
+
             actions[i][step-1] = action
 
             tic = time.time()
@@ -72,11 +72,11 @@ def generate_session(agent, n_sessions, n, dist_matrix, len_word, len_game, obse
             play_time += time.time()-tic
 
             if (action > 0):
-                state_next[i][step-1] = action		         
+                state_next[i][step-1] = action
             state_next[i][len_word + step-1] = 0
 
             if (step < len_word):
-                state_next[i][len_word + step] = 1			
+                state_next[i][len_word + step] = 1
             terminal = step == len_word
 
             if terminal:
@@ -85,15 +85,15 @@ def generate_session(agent, n_sessions, n, dist_matrix, len_word, len_game, obse
             tic = time.time()
 
             if not terminal:
-                states[i,:,step] = state_next[i]			
+                states[i,:,step] = state_next[i]
             recordsess_time += time.time()-tic
-        
+
         if terminal:
             break
-	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.	
+	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.
     if verbose == 1:
         print("Predict: "+str(pred_time)+", play: " + str(play_time) +", scorecalc: " + str(scorecalc_time) +", recordsess: " + str(recordsess_time))
-    return states, actions, total_score 
+    return states, actions, total_score
 
 def select_elites(states_batch, actions_batch, rewards_batch, percentile=50):
 
@@ -105,15 +105,15 @@ def select_elites(states_batch, actions_batch, rewards_batch, percentile=50):
 
     for i in prange(len(states_batch)):
         if rewards_batch[i] >= reward_threshold - 0.000001 and counter > 0:
-            
+
             for item in states_batch[i]:
                 elite_states = torch.cat((elite_states, item.unsqueeze(0)))
-                
+
             for item in actions_batch[i]:
                 elite_actions = torch.cat((elite_actions, item.unsqueeze(0)))
 
-        counter -= 1
-    
+            counter -= 1
+
 
     return elite_states, elite_actions
 
@@ -132,7 +132,7 @@ def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile
             super_actions = torch.cat((super_actions, actions_batch[i].unsqueeze(0)), dim=0)
             super_rewards = torch.cat((super_rewards, rewards_batch[i].unsqueeze(0)), dim=0)
         counter -= 1
-    
+
 
     return super_states, super_actions, super_rewards
 
@@ -151,9 +151,11 @@ def train(board_size, write_all, write_best, filename, slow):
                             #the positions we haven't considered yet), and the next MYN bits one-hot encode which letter we are considering now.
                             #So e.g. [0,1,0,0,   0,0,1,0] means we have the partial word 01 and we are considering the third letter now.
                             #Is there a better way to format the input to make it easier for the neural network to understand things?
-    len_game = len_word 
+    len_game = len_word
 
     INF = 1000000
+
+    verbose = 1 #set to 1 to print out how much time each step in generate_session takes
 
     first_layer_neurons = 128
     second_layer_neurons = 64
@@ -205,11 +207,11 @@ def train(board_size, write_all, write_best, filename, slow):
 
     pass_threshold =  0.25*n # the mean_all_reward must be greater than this threshold to pass the test
 
-    counter = 0 # Counter for number of generations where the reward is < 1. 
+    counter = 0 # Counter for number of generations where the reward is < 1.
 
     for i in range(20000):
         tic = time.time()
-        sessions = generate_session(net,n_sessions,n, dist_matrix, len_word, len_game, observation_space, 1, slow) #change 0 to 1 to print out how much time each step in generate_session takes 
+        sessions = generate_session(net,n_sessions,n, dist_matrix, len_word, len_game, observation_space, verbose, slow) #change 0 to 1 to print out how much time each step in generate_session takes
         sessgen_time = time.time()-tic
 
         tic = time.time()
@@ -226,7 +228,7 @@ def train(board_size, write_all, write_best, filename, slow):
 
         rewards_batch = torch.cat((rewards_batch, super_rewards), dim=0)
 
-        randomcomp_time = time.time()-tic 
+        randomcomp_time = time.time()-tic
         tic = time.time()
 
         elite_states, elite_actions = select_elites(states_batch, actions_batch, rewards_batch, percentile=percentile) #pick the sessions to learn from
@@ -260,18 +262,18 @@ def train(board_size, write_all, write_best, filename, slow):
         super_rewards = torch.stack([super_sessions[i][2] for i in range(len(super_sessions))])
 
         rewards_batch.sort()
-        mean_all_reward = torch.mean(rewards_batch[-100:])	
-        mean_best_reward = torch.mean(super_rewards)	
+        mean_all_reward = torch.mean(rewards_batch[-100:])
+        mean_best_reward = torch.mean(super_rewards)
 
         if mean_all_reward < 1:
             counter += 1
 
         score_time = time.time()-tic
-        
+
         print("\n" + str(i) +  ". Best individuals: " + str(np.flip(np.sort(super_rewards))))
 
-        #uncomment below line to print out how much time each step in this loop takes. 
-        print(	"Mean reward: " + str(mean_all_reward) + "\nSessgen: " + str(sessgen_time) + ", other: " + str(randomcomp_time) + ", select1: " + str(select1_time) + ", select2: " + str(select2_time) + ", select3: " + str(select3_time) +  ", fit: " + str(fit_time) + ", score: " + str(score_time)) 
+        #uncomment below line to print out how much time each step in this loop takes.
+        print(	"Mean reward: " + str(mean_all_reward) + "\nSessgen: " + str(sessgen_time) + ", other: " + str(randomcomp_time) + ", select1: " + str(select1_time) + ", select2: " + str(select2_time) + ", select3: " + str(select3_time) +  ", fit: " + str(fit_time) + ", score: " + str(score_time))
 
         #uncomment below line to print out the mean best reward
         print("Mean best reward: " + str(mean_best_reward))
@@ -320,7 +322,7 @@ def train(board_size, write_all, write_best, filename, slow):
                 with open(os.path.join('Data', str(filename)+'_best_species_timeline'+'.txt'), 'a') as f:
                     f.write(str(convert_to_board(super_actions[0].numpy(), n)))
                     f.write("\n")
-        
+
         if counter > 1000 and mean_best_reward > pass_threshold:
             with open(os.path.join('Data', str(filename)+'_best_species_pickle'+'.txt'), 'wb') as fp:
                 pickle.dump(super_actions, fp)
@@ -340,6 +342,3 @@ def train(board_size, write_all, write_best, filename, slow):
                 f.write(str(convert_to_board(super_actions[0].numpy(), n)))
                 f.write("\n")
             return super_actions[0].numpy()
-        
-                    
-

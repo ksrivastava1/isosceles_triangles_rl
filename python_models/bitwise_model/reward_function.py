@@ -3,8 +3,8 @@ import numpy as np
 from numba import prange
 
 Lambda = 0.5 # Weight for regularizing the reward function to generate more ones (too high a labda will result in higher odds of generating isosceles triangles)
-board_construction = 'spiral' # 'rowwise' or 'spiral'
-board_type = 'torus' # 'euclidean' or 'torus'
+board_construction = 'rowwise' # 'rowwise' or 'spiral'
+board_type = 'euclidean' # 'euclidean' or 'torus'
 
 # Helper function for some computations (Can use math.comb() instead if you are using python 3.8 or higher)
 
@@ -14,7 +14,7 @@ def factorial(n):
         return 1
     else:
         return n * factorial(n - 1)
-    
+
 @njit
 def n_choose_k(n, k):
     if k > n:
@@ -38,7 +38,7 @@ def torus_distance(i1, j1, i2, j2, rows, cols):
     return np.sqrt(d1**2 + d2**2)
 
 @njit
-def create_coordinates(n): 
+def create_coordinates(n):
     coordinates = np.empty((n**2, 2))
     for i in prange(n):
         for j in prange(n):
@@ -161,7 +161,7 @@ def count_isosceles_triangles(board, distance_matrix, p):
 
     # Find indices of all ones on the board
     one_indices = np.flatnonzero(board == 1)
-    
+
     # Compute pairwise distances between all ones and store in a matrix
     # So row i is the distances from the ith one to all other ones
 
@@ -198,10 +198,10 @@ def count_isosceles_triangles_manual(board, p):
     if board_type == 'euclidean':
         # Find indices of all ones on the board
         one_indices = np.flatnonzero(board == 1)
-        
+
         # Initialize count of isosceles triangles to zero
         count = 0
-        
+
         # Iterate over all pairs of ones
         for i in prange(p):
             for j in prange(i + 1, p):
@@ -213,17 +213,17 @@ def count_isosceles_triangles_manual(board, p):
                                     (one_indices[i] % board.shape[0] - one_indices[k] % board.shape[0]) ** 2)
                     dist_jk = np.sqrt((one_indices[j] // board.shape[0] - one_indices[k] // board.shape[0]) ** 2 +
                                     (one_indices[j] % board.shape[0] - one_indices[k] % board.shape[0]) ** 2)
-                    
+
                     # Check if any two distances are equal (up to a tolerance)
                     if dist_ij == dist_ik or dist_ij == dist_jk or dist_ik == dist_jk:
                         count += 1
     elif board_type == 'torus':
         # Find indices of all ones on the board
         one_indices = np.flatnonzero(board == 1)
-        
+
         # Initialize count of isosceles triangles to zero
         count = 0
-        
+
         # Iterate over all triples of ones
         for i in prange(p):
             for j in prange(i + 1, p):
@@ -238,7 +238,7 @@ def count_isosceles_triangles_manual(board, p):
                     dist_jk = torus_distance(one_indices[j] // board.shape[0], one_indices[j] % board.shape[0],
                                              one_indices[k] // board.shape[0], one_indices[k] % board.shape[0],
                                              board.shape[0], board.shape[1])
-                    
+
                     # Check if any two distances are equal (up to a tolerance)
                     if dist_ij == dist_ik or dist_ij == dist_jk or dist_ik == dist_jk:
                         count += 1
@@ -263,8 +263,8 @@ def get_score(word, dist_matrix,len_word, n, slow):
     # Get the number of 1s on the board
     p = np.sum(board)
 
-    if p >= 3*n:
-        return -10000
+    # if p >= 3*n:
+       #  return -10000
 
     # Calculate the number of isosceles triangles on the board
     if slow:
@@ -273,4 +273,3 @@ def get_score(word, dist_matrix,len_word, n, slow):
         isosceles = count_isosceles_triangles(board, dist_matrix, int(p))
 
     return -1*(isosceles) + Lambda*(p)
-
